@@ -51,7 +51,7 @@
 
 以下是我針對該測資所做的 load balancing 實驗：
 
-<img src="image.png" width = "500" height = "300">
+<img src="images/image.png" width = "500" height = "300">
 
 其中可以發現每個 process 在 I/O 的處理上花費的時間基本上相同，說明了資料的分配滿平均的。比較有差異的是 communication time 和 computing time，根據我的 implementation，可以發現 sender process 只會傳訊息給 receiver process 並等待 receiver process 回傳結果，這段時間裡其實 sender process 會一直 idle 在 communication 上，造成這兩種時間的分布比較不平均。
 
@@ -59,7 +59,7 @@
 
 接著觀察一下該實驗的 communication pattern：
 
-<img src="mpi_stack_byrank.png" width = "500" height = "300">
+<img src="images/mpi_stack_byrank.png" width = "500" height = "300">
 
 可以發現 `MPI_Bcast()` 的分佈相較於其他 MPI communication 的操作來說較為不均勻，說明了有些 processes 的確 idle 在 termination check 的 communication 上較久，有些則否。
 
@@ -69,11 +69,11 @@
 
 以下是修正過後的實驗結果：
 
-<img src="image-1.png" width = "500" height = "300">
+<img src="images/image-1.png" width = "500" height = "300">
 
 可以發現優化過後的總執行時間有明顯的下降，同時 communication time 和 computing time 的分布也變得比較均勻。
 
-<img src="mpi_stack_byrank2.png" width = "500" height = "300">
+<img src="images/mpi_stack_byrank2.png" width = "500" height = "300">
 
 ### Another Experiments
 
@@ -81,41 +81,41 @@
 
 - 在 Single node 上測試不同平行度
 
-<img src="image-4.png" width = "500" height = "300">
+<img src="images/image-4.png" width = "500" height = "300">
 
 可以觀察到 I/O time 以及 computing time 都會隨著平行度上升而下降，原因是每個 process 被分配到的資料量變少，所以不管是在讀寫資料或是資料交換的速度上都會有顯著的提升。然而，唯一相反的是 communication time，可以觀察到 processes 之間溝通的時間成本會隨著平行度上升而跟著提升。
 
 接著看一下實驗的 Speed up：
 
-<img src="image-3.png" width = "500" height = "300">
+<img src="images/image-3.png" width = "500" height = "300">
 
 從 Speed up 的趨勢來看，可以發現 strong scalability 其實沒有很好，甚至沒有一個平行度達到兩倍以上的提速，詳細的分析留在之後的討論。
 
 - 在 Multiple nodes 的環境下測試不同平行度（N = 4）
 
-<img src="image-5.png" width = "500" height = "300">
+<img src="images/image-5.png" width = "500" height = "300">
 
 可以觀察到 computing time 基本上還是隨著平行度上升而下降，因為處理的資料量變少，而 processes 和 nodes 之間的 communication overhead 也可以很明顯的看出上升的趨勢。至於比較 tricky 的是 I/O 的 performance，我們可以觀察到 I/O performance 的 pattern 沒甚麼規律，直覺上應該要隨著平行度的上升而下降，但在圖中觀察不到這樣的趨勢。
 
 觀察一下實驗的 Speed up：
 
-<img src="image-6.png" width = "500" height = "300">
+<img src="images/image-6.png" width = "500" height = "300">
 
 可以看到因為 I/O performance 的不穩定，加上隨著使用的 processes 數量越多，communication 所帶來的 overhead 影響越大，造成了整體 Speed up 的趨勢變得相對曲折，真要說可以看出上升趨勢的地方，大概就是 4, 8, 12, 16 這幾個 processes 數量的表現。而針對 strong scalability 來看，整體提速大致落在三倍以下，再次驗證了整個 program 的 scalability 並沒有很好，不管是在 Single node 或是 Multiple nodes 的環境下。
 
 - 固定平行度的情況下測試使用不同數量的 nodes（n = 12）
 
-<img src="image-7.png" width = "500" height = "300">
+<img src="images/image-7.png" width = "500" height = "300">
 
 從上圖我們可以觀察到隨著使用的 nodes 數量增加，總執行時間有些微的下降，這可能是因為使用多個 nodes 在 resource contention 上相較於只使用一個 node 的情況競爭比較不會那麼激烈。而從 Speed up 來看，可以很明顯的看出上升的趨勢。
 
-<img src="image-8.png" width = "500" height = "300">
+<img src="images/image-8.png" width = "500" height = "300">
 
 - 在 local sort 時嘗試不同 sorting algorithm
 
     由於 local sort 的時間會被算在 computing time 裡，使用適合的 sorting algorithm 可以有效幫助減少 computing time，尤其是在 problem size 很大的時候。
 
-<img src="image-9.png" width = "500" height = "300">
+<img src="images/image-9.png" width = "500" height = "300">
 
 這邊我測試了一些公認比較快的 sorting method，像是 `std::sort()` 以及 `qsort()`，至於 `boost::spreadsort()` 以及 `boost::float_sort()` 則是因為 input array 的 data type 為 float，根據 boost C++ library 的 document，這兩種 sorting method 在 sorting 的對象為浮點數時，速度會比 `std::sort()` 快很多，從上面的結果來看也是如此。
 

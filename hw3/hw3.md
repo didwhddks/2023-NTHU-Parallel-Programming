@@ -48,7 +48,7 @@
 
         舉例來說，如果 blocking factor 為 64 且 thread block 的大小為 32 * 32，這代表說總共會有 32 個 warps 且每個 warp 都會執行四條 memory access 的指令，那麼 coalesced access 的 pattern 就會如下圖所示：
 
-        <img src="coalesced.png" width = "500" height = "300">
+        <img src="images/coalesced.png" width = "500" height = "300">
 
         此外，觀察演算法我們還可以發現不管在哪個 phase，每個 block 的計算都只會取決於特定某幾塊 blocks，而且會重複地去 access data。舉例來說，phase 1 每個 block 的計算基本上只取決於自己，phase 2 的計算取決於 pivot block 以及自己，而 phase 3 的計算則是取決於 pivot row 以及 pivot column 上對應的兩個 blocks。
 
@@ -111,9 +111,9 @@
 - Global memory load throughput
 - Global memory store throughput
 
-<img src="image-5.png" width = "300" height = "200"> <img src="image-6.png" width = "300" height = "200">
-<img src="image-7.png" width = "300" height = "200"> <img src="image-8.png" width = "300" height = "200">
-<img src="image-9.png" width = "300" height = "200">
+<img src="images/image-5.png" width = "300" height = "200"> <img src="images/image-6.png" width = "300" height = "200">
+<img src="images/image-7.png" width = "300" height = "200"> <img src="images/image-8.png" width = "300" height = "200">
+<img src="images/image-9.png" width = "300" height = "200">
 
 從以上結果可以看出，設定 blocking factor 為 64 相對其他大小的 blocking factor 來說，在 computation 以及 global & shared memory load/store 的 performance 上都表現得相對較好，這說明了此設定在 computation 以及 memory 的使用上是個相對較好的選擇。
 
@@ -129,7 +129,7 @@
 - Loop unrolling
 - Remove redundant accesses to shared memory
 
-<img src="image.png" width = "300" height = "200"> <img src="image-1.png" width = "300" height = "200">
+<img src="images/image.png" width = "300" height = "200"> <img src="images/image-1.png" width = "300" height = "200">
 
 透過以上幾種優化技巧的使用，從圖中可以發現整體 program 的執行效率有了接近 60x 的提速，而其中也可以觀察到針對 global & shared memory 做的優化所帶來的提速相對來說十分地顯著，這同時也說明了對於提升 cuda program 的效能來說，memory 的管控是十分關鍵的。
 
@@ -144,7 +144,7 @@
 
 其中 Self-generated testcase 的 input size 是由兩倍的 11000^3 開三次方根得到，edges 的數量則是設定和 `p11k1` 相同，而以下是實際針對兩個版本所測量到的結果。
 
-<img src="image-3.png" width = "300" height = "200"> <img src="image-4.png" width = "300" height = "200">
+<img src="images/image-3.png" width = "300" height = "200"> <img src="images/image-4.png" width = "300" height = "200">
 
 從以上結果可以看出，整體 program 的 weak scalability 離 perfect linear scaling 還有段距離，其中有個主要原因是在於 Two GPUs version 的每個 round 開始之前，其中一顆 GPU 都必須透過 device to device 的溝通方式將 pivot row 傳給另一顆 GPU，另一顆 GPU 才可以獨立且正確地完成計算，無形地增加了溝通的時間成本，因而導致整體 program 沒辦法達到 perfect linear scaling。
 
@@ -162,7 +162,7 @@
 | p17k1            | 17000        | 4326829  | 0.182423s | 4.323537s   | 4.100939s     | 1.046810s     |
 
 <br>
-<img src="image-2.png" width = "500" height = "300">
+<img src="images/image-2.png" width = "500" height = "300">
 
 從以上結果可以看出隨著 input size 的增加，處理的資料量以及計算量變多，導致以上實驗 metrics 所測量到的時間也都隨之增加。然而，其中可以觀察到雖然 H2D 以及 D2H data transfer 的量在相同的 input size 下相等，但是 D2H memcpy 和 H2D memcpy 所需的時間可能存在差異。根據測資 `p17k1` 所測出來的結果可以發現，這兩個 metrics 在 input size N = 17000 的時候速度差異甚至來到了將近 24x ，這反映出了 H2D 和 D2H 這兩個 data transfer 方向的 bandwidth 並不完全相同，H2D data transfer 的 bandwidth 可能相對來說大於 D2H data transfer 的 bandwidth。
 

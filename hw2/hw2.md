@@ -41,15 +41,15 @@
 
 這邊我主要使用三筆測資來觀察 pthread version 以及 hybrid version 的 load balancing，分別為 strict13.txt、strict17.txt 以及 slow16.txt。
 
-<img src="strict13.png" width = "210" height = "140"> <img src="strict17.png" width = "210" height = "140"> <img src="slow16.png" width = "210" height = "140">
+<img src="images/strict13.png" width = "210" height = "140"> <img src="images/strict17.png" width = "210" height = "140"> <img src="images/slow16.png" width = "210" height = "140">
 
 - Pthread version（固定使用一顆 node、一個 process、12 條 threads，process 可以使用的 core 數為 12 個）
 
     針對時間的測量，主要需要關心的是單一 thread 花費在處理計算工作上的時間，這邊我是將上述提到的 `std::chrono::steady_clock::now()` 去夾在 thread 被 assign 的 function 前後去得到 thread 的總執行時間，但這之中可能包含了 thread 在 acquire 計算工作時被 mutex 擋下的時間。因此在以下的實驗結果中，我有再從總執行時間內扣除 locking 的 waiting time 來獲得實際花費在計算上的時間。
 
-    <img src="image.png" width = "300" height = "200"> <img src="image-1.png" width = "300" height = "200">
+    <img src="images/image.png" width = "300" height = "200"> <img src="images/image-1.png" width = "300" height = "200">
 
-    <img src="image-2.png" width = "300" height = "200">
+    <img src="images/image-2.png" width = "300" height = "200">
 
     在我的實作當中，由於座標是 sequential 的被 acquire，所以每個座標其實就有點像是機率性的被分配到每個 thread 作計算。因此，上述的實驗結果其實是我針對單一測資做了數次實驗取平均之後的結果。平均來看，使用 sequential 的 loading 分配搭上 dynamic load balancing 可以達到還算滿均勻的 load balancing。
 
@@ -57,11 +57,11 @@
 
     除了 threads 之間的 load balancing 之外，在 hybrid version 中，processes 之間的 load balancing 也是極為重要。因此相較於 pthread version，這邊我多觀察了每個 process 的總執行時間，該時間包含了計算的時間、MPI 溝通的時間以及最後 PNG I/O 的時間（rank 0 的 process 負責）。時間的計算上則是使用了 MPI library 提供的 `MPI_Wtime()` 以及 OpenMP library 提供的 `omp_get_wtime()`。
 
-    <img src="image-3.png" width = "300" height = "200"> <img src="image-4.png" width = "300" height = "200">
+    <img src="images/image-3.png" width = "300" height = "200"> <img src="images/image-4.png" width = "300" height = "200">
 
-    <img src="image-5.png" width = "300" height = "200"> <img src="image-6.png" width = "300" height = "200">
+    <img src="images/image-5.png" width = "300" height = "200"> <img src="images/image-6.png" width = "300" height = "200">
 
-    <img src="image-7.png" width = "300" height = "200"> <img src="image-8.png" width = "300" height = "200">
+    <img src="images/image-7.png" width = "300" height = "200"> <img src="images/image-8.png" width = "300" height = "200">
 
     整體上來看，thread-level 的 load balancing 依舊表現得十分均勻，無論是在 in process 或是 cross processes 的比較上都有很穩定的表現。然而，在 process-level 的 load balancing 上就表現的相對不均勻，可以看到 rank 0 的 process 因為負責了最後整張圖片的 PNG I/O，相比其他 processes 多出了一些 memory management、pixel color preprocessing 以及 I/O 的時間，所以基本上整個 program 的 worst case runtime 就被其給 bound 住。一個可能的優化方向是讓每個 process 獨立處理自己的計算結果並獨立做 PNG I/O，這樣不僅可以讓 rank 0 的 process 在做 PNG I/O 時的負擔降低，同時也可以省下 MPI 溝通的時間成本。
 
@@ -73,7 +73,7 @@
 
     在計算總執行時間上，這邊我主要是將 `std::chrono::steady_clock::now()` 夾在 main function 的前後來獲得時間差。
 
-    <img src="image-9.png" width = "300" height = "200"> <img src="image-10.png" width = "300" height = "200">
+    <img src="images/image-9.png" width = "300" height = "200"> <img src="images/image-10.png" width = "300" height = "200">
 
     從結果上來看，整體的 strong scalability 還算不錯，實際的 speedup 和理想的 speedup 也滿接近的。相較於在 hw1 中做的實驗，因為少了 communication 的 overhead 以及很大一部份 I/O 的影響，單純只留下了計算上的貢獻，所以在這邊我們能夠看到很好的 strong scalability。
     
@@ -83,7 +83,7 @@
 
     在計算 program 的總執行時間上，因為在 hybrid version 中有加入了 process-level 的平行度，總執行時間會受限於跑最慢的 process，所以這邊我是先透過 `MPI_Wtime()` 去夾在 main function 的前後來獲得每個 process 的執行時間，最後再透過 `MPI_Reduce()` 將所有 processes 的執行時間 reduce 到 rank 0 的 process 取最大值，該最大值即為 program 的總執行時間。
 
-    <img src="image-11.png" width = "300" height = "200"> <img src="image-12.png" width = "300" height = "200">
+    <img src="images/image-11.png" width = "300" height = "200"> <img src="images/image-12.png" width = "300" height = "200">
     
     從結果上來看，hybrid version 整體的 scalability 還算不錯，實際的 speedup 和理想的 speedup 也還算接近。然而，從圖中可以發現 hybrid version 在 speedup 上升的後半段表現上，實際和理想 speedup 的差距變化趨勢相比 pthread version 來得劇烈很多。這邊我想可能是因為和 pthread version 相比，hybrid version 多出了一些 communication 的 overhead，抑或是因為被負責最後 PNG I/O 的 rank 0 的 runtime 給 bound 住，進而導致了更劇烈的 speedup 下降。
 
