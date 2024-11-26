@@ -10,9 +10,9 @@ The presented GPU implementation achieves significant improvements in execution 
 
 ## Matrix Chain Product Problem
 
-**Definition:** The **Matrix Chain Product Problem** is an optimization problem for finding parentheses of the matrix chain that gives the minimum total number of multiplications necessary to compute the product of the matrix chain.
+**Definition:** The **Matrix Chain Product Problem** is an optimization problem for finding parentheses of the matrix chain that gives the minimum total number of multiplications necessary to compute the product of the matrix chain. Suppose that a chain of three or more matrices to be multiplied is given. The total number of multiplications may vary depending on the order of multiplication.
 
-**Solution:** Using the concept of dynamic programming, the optimal solution to the original problem is derived by considering the optimal solutions of all possible sub-problems. The standard dynamic programming solution for the Matrix Chain Multiplication Problem has a time complexity of $\mathbb{O}(n^3)$ and a space complexity of $\mathbb{O}(n^2)$ due to the use of 2D DP tables.
+**Conventional Solution:** Using the concept of dynamic programming, the optimal solution to the original problem is derived by considering the optimal solutions of all possible sub-problems. The standard dynamic programming solution for the Matrix Chain Multiplication Problem has a time complexity of $\mathbb{O}(n^3)$ and a space complexity of $\mathbb{O}(n^2)$ due to the use of 2D DP tables.
 
 ## GPU Implementations
 
