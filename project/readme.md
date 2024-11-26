@@ -1,6 +1,6 @@
 # Solving Matrix Chain Product Problem on GPUs
 
-The implementation described in this repository is based on the methods presented in the paper 'Accelerating the Dynamic Programming for the Matrix Chain Product on the GPU' by Kazufumi Nishida, Yasuaki Ito, and Koji Nakano, published at the IEEE International Conference on Networking and Computing, 2011.
+The implementation described in this repository is based on the concept presented in the paper "**Accelerating the Dynamic Programming for the Matrix Chain Product on the GPU**" by Kazufumi Nishida, Yasuaki Ito, and Koji Nakano, published at the IEEE International Conference on Networking and Computing, 2011.
 
 ## Overview
 
@@ -13,6 +13,10 @@ Besides, the implementation achieves significant improvements in execution effic
 The **Matrix Chain Product Problem** involves determining the optimal order of multiplications for a chain of matrices to minimize computational cost. The problem, solvable using dynamic programming, has a time complexity of **O(n³)** and a space complexity of **O(n²)**. This referenced research aims to exploit GPU parallelism to significantly accelerate the solution.
 
 ## Implementation Details
+
+In a standard dynamic programming solution, the 2-dimensional DP table is computed in a bottom-up order, starting with shorter chains of matrices and progressing to longer ones. When offloading this computation to GPUs, a straightforward approach is to assign each entry of the 2D DP table to a separate GPU thread, enabling parallel computation of independent entries.
+
+However, chains of matrices
 
 ## Results
 
