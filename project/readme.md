@@ -1,18 +1,36 @@
 # Solving Matrix Chain Product Problem on GPUs
 
-The implementation described in this repository is based on the methods presented in the paper 'Accelerating the Dynamic Programming for the Matrix Chain Product on the GPU' by Kazufumi Nishida, Yasuaki Ito, and Koji Nakano, published at the IEEE International Conference on Networking and Computing, 2011.
+The implementation described in this repository is based on the methods presented in the paper "**Accelerating the Dynamic Programming for the Matrix Chain Product on the GPU**" by Kazufumi Nishida, Yasuaki Ito, and Koji Nakano, published at the IEEE International Conference on Networking and Computing, 2011.
 
 ## Overview
 
-This project explores a parallel implementation of the dynamic programming algorithm for the **Matrix Chain Product Problem (MCPP)** on GPUs using CUDA. The algorithm addresses the challenge of minimizing the number of scalar multiplications required to compute the product of a sequence of matrices by optimizing the parenthesization of operations.
+This project explores a parallel implementation of the dynamic programming algorithm for the **Matrix Chain Product Problem (MCPP)** on GPUs using **CUDA**. The algorithm addresses the challenge of minimizing the number of scalar multiplications required to compute the product of a sequence of matrices by optimizing the parenthesization of operations.
 
-Besides, the implementation achieves significant improvements in execution efficiency by exploiting coalesced memory accesses to reduce the number of global memory transactions and utilizing per-block shared memory for faster, localized data access.
+The presented GPU implementation achieves significant improvements in execution time by leveraging the data parallelism of GPUs, optimizing coalesced memory accesses to minimize global memory transactions, and utilizing per-block shared memory resources for faster and localized data access.
 
-## Problem Statement
+## Matrix Chain Product Problem
 
-The **Matrix Chain Product Problem** involves determining the optimal order of multiplications for a chain of matrices to minimize computational cost. The problem, solvable using dynamic programming, has a time complexity of **O(n³)** and a space complexity of **O(n²)**. This referenced research aims to exploit GPU parallelism to significantly accelerate the solution.
+**Definition:** The **Matrix Chain Product Problem** is an optimization problem for finding parentheses of the matrix chain that gives the minimum total number of multiplications necessary to compute the product of the matrix chain. Suppose that a chain of three or more matrices to be multiplied is given. The total number of multiplications may vary depending on the order of multiplication.
 
-## Implementation Details
+**Conventional Solution:** Using the concept of dynamic programming, the optimal solution to the original problem is derived by considering the optimal solutions of all possible sub-problems. The standard dynamic programming solution for the Matrix Chain Product Problem has a time complexity of $\mathbb{O}(n^3)$ and a space complexity of $\mathbb{O}(n^2)$ due to the use of two-dimensional DP tables.
+
+## GPU Implementations
+
+In a standard dynamic programming solution, the two-dimensional DP table is computed in a bottom-up order, starting with shorter chains of matrices and progressing to longer ones. When offloading this computation to GPUs, a straightforward approach is to assign each entry of the 2D DP table to a separate GPU thread, enabling parallel computation of independent entries.
+
+Note that chains of matrices with different lengths generally exhibit data dependencies, preventing their computation within the same kernel. To ensure these dependencies are respected, computations for chains of varying lengths must be offloaded to the GPU sequentially, starting with the shortest chains and proceeding to the longest ones.
+
+### Baseline
+
+In the baseline GPU implementation, only data dependencies are considered. It groups the computation tasks for entries of the same chain length into a single kernel, assigning the computation of each entry to an individual GPU thread.
+
+### Coalesced Memory Accesses
+
+### Shared Memory Usage
+
+### Loop Unrolling
+
+### Warp Divergence
 
 ## Results
 
