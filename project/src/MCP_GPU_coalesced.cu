@@ -4,112 +4,148 @@
 #include <cuda.h>
 #include <chrono>
 
-#define thread_per_block 1024
-#define maxN 10000
+#define thread_per_block 256
+#define i64 long long
 
-const long long INF = 2E18;
+const i64 inf = 2E18;
 int N;
-long long *dp_host, *cut_host;
+i64 *dp_host, *cut_host;
 int *p_host;
 
-__constant__ int p_constant[maxN + 1];
-
-__host__ __device__ int convertIdx(int len, int i, int N) {
-    return len * N + i;
+__host__ __device__ int convertIdx(int i, int j, int N) {
+    return i * N + j;
 }
 
-void input() {
+__host__ int ceil(int a, int b) {
+    return (a + b - 1) / b;
+}
+
+__host__ void input() {
     FILE *input_file = fopen("testcase", "r");
-    fread(&N, sizeof(int), 1, input_file);
+    if (fread(&N, sizeof(int), 1, input_file) != 1) {
+        std::cerr << "Error reading from file" << std::endl;
+        exit(1);
+    }
 
-    // malloc host memory
+    std::cout << "Number of matrices: " << N << std::endl;
+
+    // allocate host memory for p_host, dp_host, cut_host
     cudaMallocHost((void **) &p_host, (N + 1) * sizeof(int));
-    cudaMallocHost((void **) &dp_host, (N + 1) * N * sizeof(long long));
-    cudaMallocHost((void **) &cut_host, (N + 1) * N * sizeof(long long));
+    cudaMallocHost((void **) &dp_host, N * N * sizeof(i64));
+    cudaMallocHost((void **) &cut_host, N * N * sizeof(i64));
 
-    // read dimension of each matrix to p_host
-    fread(p_host, sizeof(int), N + 1, input_file);
+    // read dimensions of matrices
+    if (fread(p_host, sizeof(int), N + 1, input_file) != N + 1) {
+        std::cerr << "Error reading from file" << std::endl;
+        exit(1);
+    }
     fclose(input_file);
 
-    // initialize dp_host & cut_host
-    for (int len = 1; len <= N; ++len) {
-        for (int i = 0; i < N; ++i) {
-            dp_host[convertIdx(len, i, N)] = len == 1 ? 0 : INF;
-            cut_host[convertIdx(len, i, N)] = -1;
+    // for (int i = 0; i <= N; ++i) {
+    //     std::cout << "p[" << i << "] = " << p_host[i] << std::endl;
+    // }
+
+    // initialize dp_host and cut_host
+    for (int i = 0; i < N; ++i) {
+        for (int j = i; j < N; ++j) {
+            int idx = convertIdx(j - i, i, N);
+            dp_host[idx] = i == j ? 0 : inf;
+            cut_host[idx] = -1;
         }
     }
 }
 
-__global__ void oneThreadPerEntry(long long *dp_device, long long *cut_device, int len, int N) {
+__global__ void oneThreadPerEntry(i64 *dp_device, i64 *cut_device, int *p_device, int len, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
-    int j = i + len - 1;
+    int j = i + len;
 
-    if (i >= N || j >= N) {
-        return;
+    if (i < N && j < N) {
+        for (int k = i; k < j; ++k) {
+            i64 cost = dp_device[convertIdx(k - i, i, N)] + dp_device[convertIdx(j - k - 1, k + 1, N)] +
+                            1LL * p_device[i] * p_device[k + 1] * p_device[j + 1];
+            if (cost < dp_device[convertIdx(len, i, N)]) {
+                dp_device[convertIdx(len, i, N)] = cost;
+                cut_device[convertIdx(len, i, N)] = k;
+            }
+        }
     }
-
-    long long minimum = dp_device[convertIdx(len, i, N)];
-    long long cut_point = -1;
-    long long i_dim = p_constant[i];
-    long long j_dim = p_constant[j + 1];
-
-    // #pragma unroll
-    for (int k = i; k < j; ++k) {
-        long long cost = dp_device[convertIdx(k - i + 1, i, N)] + dp_device[convertIdx(j - k, k + 1, N)] + 1LL * i_dim * j_dim * p_constant[k + 1];
-        // replace the if-else statement with min() function to avoid warp divergence
-        cut_point = cost < minimum ? k : cut_point;
-        minimum = min(minimum, cost);
-    }
-
-    dp_device[convertIdx(len, i, N)] = minimum;
-    cut_device[convertIdx(len, i, N)] = cut_point;
 }
 
 int main() {
-
-    double execution_time = 0.0;
-    auto start = std::chrono::steady_clock::now();
-
     cudaSetDevice(0);
     input();
 
-    long long *dp_device, *cut_device;
-    // int *p_device;
-    // cudaMalloc((void **) &p_device, (N + 1) * sizeof(int));
-    cudaMalloc((void **) &dp_device, (N + 1) * N * sizeof(long long));
-    cudaMalloc((void **) &cut_device, (N + 1) * N * sizeof(long long));
+    i64 *dp_device, *cut_device;
+    int *p_device;
+    cudaMalloc((void **) &p_device, (N + 1) * sizeof(int));
+    cudaMalloc((void **) &dp_device, N * N * sizeof(i64));
+    cudaMalloc((void **) &cut_device, N * N * sizeof(i64));
 
-    // cudaMemcpy(p_device, p_host, (N + 1) * sizeof(int), cudaMemcpyHostToDevice);
-    cudaMemcpyToSymbol(p_constant, p_host, (N + 1) * sizeof(int));
-    cudaMemcpy(dp_device, dp_host, (N + 1) * N * sizeof(long long), cudaMemcpyHostToDevice);
-    cudaMemcpy(cut_device, cut_host, (N + 1) * N * sizeof(long long), cudaMemcpyHostToDevice);
+    cudaMemcpy(p_device, p_host, (N + 1) * sizeof(int), cudaMemcpyHostToDevice);
+    cudaMemcpy(dp_device, dp_host, N * N * sizeof(i64), cudaMemcpyHostToDevice);
+    cudaMemcpy(cut_device, cut_host, N * N * sizeof(i64), cudaMemcpyHostToDevice);
 
-    // TODO: implement the parallel version of matrix chain multiplication here
-    // Can try OneThreadPerEntry, OneBlockPerEntry, MultipleBlocksPerEntry
-    // Can try shared memory, coalesced memory access, etc.
-    // Observe the memory access pattern of each entry (thread) to explore potential optimization
+    // CUDA event timing
+    cudaEvent_t start, stop;
+    cudaEventCreate(&start);
+    cudaEventCreate(&stop);
 
-    // OneThreadPerEntry
-    for (int len = 2; len <= N; ++len) {
-        int num_blocks = (N - len + thread_per_block) / thread_per_block;
-        oneThreadPerEntry<<<num_blocks, thread_per_block>>>(dp_device, cut_device, len, N);
+    // Record start time
+    cudaEventRecord(start, 0);
+
+    // Launch kernel for each length
+    for (int len = 1; len < N; ++len) {
+        int num_blocks = ceil(N - len, thread_per_block);
+        // std::cout << "Launching kernel for length " << len << " with " << num_blocks << " blocks" << std::endl;
+        oneThreadPerEntry<<<num_blocks, thread_per_block>>>(dp_device, cut_device, p_device, len, N);
+        // Check if the kernel launch was successful
+        cudaError_t err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            std::cerr << "Kernel launch failed: " << cudaGetErrorString(err) << std::endl;
+        }
+        cudaDeviceSynchronize();
+        err = cudaGetLastError();
+        if (err != cudaSuccess) {
+            std::cerr << "Kernel execution failed: " << cudaGetErrorString(err) << std::endl;
+        }
     }
 
-    cudaMemcpy(dp_host, dp_device, (N + 1) * N * sizeof(long long), cudaMemcpyDeviceToHost);
-    cudaMemcpy(cut_host, cut_device, (N + 1) * N * sizeof(long long), cudaMemcpyDeviceToHost);
+    // Record stop time
+    cudaEventRecord(stop, 0);
 
-    auto end = std::chrono::steady_clock::now();
-    execution_time += std::chrono::duration_cast<std::chrono::milliseconds>(end - start).count();
+    // Wait for all GPU tasks to finish
+    cudaEventSynchronize(stop);
 
-    std::cout << "Execution time: " << execution_time << " ms" << std::endl;
-    std::cout << "Minimum number of multiplications: " << dp_host[convertIdx(N, 0, N)] << std::endl;
+    // Calculate elapsed time
+    float elapsed_time = 0;
+    cudaEventElapsedTime(&elapsed_time, start, stop);
 
-    // free the memory spaces that are allocated in host and device
-    // cudaFree(p_device);
+    // Copy results back to host
+    cudaMemcpy(dp_host, dp_device, N * N * sizeof(i64), cudaMemcpyDeviceToHost);
+    cudaMemcpy(cut_host, cut_device, N * N * sizeof(i64), cudaMemcpyDeviceToHost);
+    
+    // for (int i = 0; i < N; ++i) {
+    //     for (int j = i; j < N; ++j) {
+    //         int idx = convertIdx(i, j, N);
+    //         std::cout << "dp[" << i << "][" << j << "] = " << dp_host[idx] << ", cut = " << cut_host[idx] << std::endl;
+    //     }
+    // }
+
+    // Print results
+    std::cout << "Execution time: " << elapsed_time << " ms" << std::endl;
+    std::cout << "Minimum number of multiplications: " << dp_host[convertIdx(N - 1, 0, N)] << std::endl;
+
+    // Cleanup
+    cudaFree(p_device);
     cudaFree(dp_device);
     cudaFree(cut_device);
 
     cudaFreeHost(p_host);
     cudaFreeHost(dp_host);
     cudaFreeHost(cut_host);
+
+    cudaEventDestroy(start);
+    cudaEventDestroy(stop);
+
+    return 0;
 }

@@ -14,6 +14,8 @@ int main(int argc, char *argv[]) {
     FILE *input_file = fopen("testcase", "r");
     fread(&N, sizeof(int), 1, input_file);
 
+    std::cout << "Matrix chain order: " << N << "\n";
+
     std::vector<int> p(N + 1);
     fread(&p[0], sizeof(int), N + 1, input_file);
     fclose(input_file);
