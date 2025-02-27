@@ -2,7 +2,7 @@ NVFLAGS  := -std=c++11 -O3 -Xptxas="-v" -arch=sm_75
 LDFLAGS  := -lm
 CXXFLAGS := -O3 -lm -std=c++11
 EXES     := MCP_serial
-ALLS     := MCP_serial generate_testcase calc MCP_GPU_baseline MCP_GPU_coalesced MCP_GPU_optimized MCP_GPU_unroll	
+ALLS     := MCP_serial generate_testcase calc MCP_GPU_baseline MCP_GPU_coalesced MCP_GPU_shared MCP_GPU_optimized MCP_GPU_unroll	
 
 MCP_GPU_unroll: NVFLAGS += -Xcompiler="-fopenmp"
 
@@ -24,6 +24,9 @@ MCP_GPU_baseline: MCP_GPU_baseline.cu
 	nvcc $(NVFLAGS) $(LDFLAGS) -o $@ $?
 
 MCP_GPU_coalesced: MCP_GPU_coalesced.cu
+	nvcc $(NVFLAGS) $(LDFLAGS) -o $@ $?
+
+MCP_GPU_shared: MCP_GPU_shared.cu
 	nvcc $(NVFLAGS) $(LDFLAGS) -o $@ $?
 
 MCP_GPU_optimized: MCP_GPU_optimized.cu

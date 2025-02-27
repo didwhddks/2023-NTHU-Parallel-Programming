@@ -1,6 +1,6 @@
 # Solving Matrix Chain Product Problem on GPUs
 
-This project implements a GPU-accelerated dynamic programming algorithm for the Matrix Chain Product Problem (MCP) using CUDA. The implementation is based on the paper: "**Accelerating the Dynamic Programming for the Matrix Chain Product on the GPU**" by Kazufumi Nishida, Yasuaki Ito, and Koji Nakano (IEEE ICNC 2011).
+This project implements a GPU-accelerated dynamic programming algorithm for the Matrix Chain Product Problem (MCP) using **CUDA**. The implementation is based on the paper: "**Accelerating the Dynamic Programming for the Matrix Chain Product on the GPU**" by Kazufumi Nishida, Yasuaki Ito, and Koji Nakano (IEEE ICNC 2011).
 
 ## Overview
 
@@ -9,7 +9,7 @@ The Matrix Chain Product Problem seeks the optimal parenthesization of a matrix 
 This project accelerates the solution by leveraging **GPU parallelism**, optimizing:
 
 - Coalesced memory accesses for efficient global memory transactions
-- Shared memory usage to reduce latency
+- Potential shared memory usage to reduce memory access latency
 - Loop unrolling and warp-aware execution for performance improvements
 
 ## Matrix Chain Product Problem
@@ -20,24 +20,28 @@ This project accelerates the solution by leveraging **GPU parallelism**, optimiz
 
 A standard DP table is computed bottom-up. GPU parallelization assigns table entries to threads while respecting data dependencies:
 
-- Baseline: Each DP entry is computed in parallel per chain length
-- Optimized versions: Improve memory access patterns and computation efficiency
+- Baseline: Naively offload tasks to GPU without considering memory optimizations
+- Coalesced: Consider coalescing effect to reduce global memory transactions
+- Shared: Consider per-block shared memory usage for faster memory accesses
+- Optimized versions: Minimize unnecessary memory accesses to further improve performance
 
 ## Results
 
-I evaluated GPU implementations on an NVIDIA T4 GPU with 2560 CUDA cores (64 cores per SM) and 16GB memory. For comparison, I also tested a traditional CPU implementation on an Apple Silicon M3 chip, which features up to 8 performance cores, 4 efficiency cores, a 16-core Neural Engine, and a unified memory architecture.
+The GPU implementations are evaluated on an NVIDIA T4 GPU with 2560 CUDA cores (64 cores per SM) and 16GB memory (up to 320+ GB/s bandwidth). For comparison, a traditional CPU implementation is also tested on an Apple Silicon M3 chip, which features up to 8 performance cores, 4 efficiency cores, a 16-core Neural Engine, and a unified memory architecture.
 
-The experimental configuration follows the original paper, using **N = 16,384** and the **oneThreadPerEntry** approach.
+The experimental configurations follow the original paper, using **N = 16,384** and the **oneThreadPerEntry** computation pattern. For the block size, values in **{32, 64, 128, 256}** are tested, and the best-performing configuration is selected for comparison.
 
 ||  CPU   | GPU_baseline | GPU_coalesced | GPU_optimized |
 |:-:| :-:  | :-:  | :-: | :-: |
 | Execution time (ms) | 3,118,010  | 194,250 | 70,783.3 | 50,736.4 |
 
-The maximum speedup is roughly 61x.
+![title](src/result.png)
+
+The maximum speedup reaches approximately **61×** compared to the traditional CPU implementation, benefiting from **high GPU parallelism** and the **optimizations** discussed above.
 
 ## Conclusion
 
-This project demonstrates how GPU parallelism can effectively accelerate dynamic programming algorithms. It introduces a flexible kernel selection mechanism and establishes a benchmark for GPU-based solutions to combinatorial optimization problems.
+This project showcases the effectiveness of a **GPU-accelerated dynamic programming solution** for the **Matrix Chain Product Problem (MCP)**, achieving a significant reduction in execution time.
 
 ## References
 
