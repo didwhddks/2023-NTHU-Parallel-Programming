@@ -1,38 +1,39 @@
 # Solving Matrix Chain Product Problem on GPUs
 
-The implementation described in this repository is based on the methods presented in the paper "**Accelerating the Dynamic Programming for the Matrix Chain Product on the GPU**" by Kazufumi Nishida, Yasuaki Ito, and Koji Nakano, published at the IEEE International Conference on Networking and Computing, 2011.
+This project implements a GPU-accelerated dynamic programming algorithm for the Matrix Chain Product Problem (MCP) using CUDA. The implementation is based on the paper: "**Accelerating the Dynamic Programming for the Matrix Chain Product on the GPU**" by Kazufumi Nishida, Yasuaki Ito, and Koji Nakano (IEEE ICNC 2011).
 
 ## Overview
 
-This project explores a parallel implementation of the dynamic programming algorithm for the **Matrix Chain Product Problem (MCPP)** on GPUs using **CUDA**. The algorithm addresses the challenge of minimizing the number of scalar multiplications required to compute the product of a sequence of matrices by optimizing the parenthesization of operations.
+The Matrix Chain Product Problem seeks the optimal parenthesization of a matrix sequence to minimize scalar multiplications. The standard dynamic programming solution runs in $\mathbb{O}(n^3)$ time and $\mathbb{O}(n^2)$ space.
 
-The presented GPU implementation achieves significant improvements in execution time by leveraging the data parallelism of GPUs, optimizing coalesced memory accesses to minimize global memory transactions, and utilizing per-block shared memory resources for faster and localized data access.
+This project accelerates the solution by leveraging **GPU parallelism**, optimizing:
+
+- Coalesced memory accesses for efficient global memory transactions
+- Shared memory usage to reduce latency
+- Loop unrolling and warp-aware execution for performance improvements
 
 ## Matrix Chain Product Problem
 
 **Definition:** The **Matrix Chain Product Problem** is an optimization problem for finding parentheses of the matrix chain that gives the minimum total number of multiplications necessary to compute the product of the matrix chain. Suppose that a chain of three or more matrices to be multiplied is given. The total number of multiplications may vary depending on the order of multiplication.
 
-**Conventional Solution:** Using the concept of dynamic programming, the optimal solution to the original problem is derived by considering the optimal solutions of all possible sub-problems. The standard dynamic programming solution for the Matrix Chain Product Problem has a time complexity of $\mathbb{O}(n^3)$ and a space complexity of $\mathbb{O}(n^2)$ due to the use of two-dimensional DP tables.
-
 ## GPU Implementations
 
-In a standard dynamic programming solution, the two-dimensional DP table is computed in a bottom-up order, starting with shorter chains of matrices and progressing to longer ones. When offloading this computation to GPUs, a straightforward approach is to assign each entry of the 2D DP table to a separate GPU thread, enabling parallel computation of independent entries.
+A standard DP table is computed bottom-up. GPU parallelization assigns table entries to threads while respecting data dependencies:
 
-Note that chains of matrices with different lengths generally exhibit data dependencies, preventing their computation within the same kernel. To ensure these dependencies are respected, computations for chains of varying lengths must be offloaded to the GPU sequentially, starting with the shortest chains and proceeding to the longest ones.
-
-### Baseline
-
-In the baseline GPU implementation, only data dependencies are considered. It groups the computation tasks for entries of the same chain length into a single kernel, assigning the computation of each entry to an individual GPU thread.
-
-### Coalesced Memory Accesses
-
-### Shared Memory Usage
-
-### Loop Unrolling
-
-### Warp Divergence
+- Baseline: Each DP entry is computed in parallel per chain length
+- Optimized versions: Improve memory access patterns and computation efficiency
 
 ## Results
+
+I evaluated GPU implementations on an NVIDIA T4 GPU with 2560 CUDA cores (64 cores per SM) and 16GB memory. For comparison, I also tested a traditional CPU implementation on an Apple Silicon M3 chip, which features up to 8 performance cores, 4 efficiency cores, a 16-core Neural Engine, and a unified memory architecture.
+
+The experimental configuration follows the original paper, using **N = 16,384** and the **oneThreadPerEntry** approach.
+
+||  CPU   | GPU_baseline | GPU_coalesced | GPU_optimized |
+|:-:| :-:  | :-:  | :-: | :-: |
+| Execution time (ms) | 3,118,010  | 194,250 | 70,783.3 | 50,736.4 |
+
+The maximum speedup is roughly 61x.
 
 ## Conclusion
 

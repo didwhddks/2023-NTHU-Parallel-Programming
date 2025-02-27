@@ -1,6 +1,6 @@
 NVFLAGS  := -std=c++11 -O3 -Xptxas="-v" -arch=sm_75 
 LDFLAGS  := -lm
-CXXFLAGS := -O3 -lm
+CXXFLAGS := -O3 -lm -std=c++11
 EXES     := MCP_serial
 ALLS     := MCP_serial generate_testcase calc MCP_GPU_baseline MCP_GPU_coalesced MCP_GPU_optimized MCP_GPU_unroll	
 
