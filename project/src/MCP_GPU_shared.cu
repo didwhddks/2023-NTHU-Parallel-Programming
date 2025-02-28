@@ -57,18 +57,32 @@ __host__ void input() {
 __global__ void oneThreadPerEntry(i64 *dp_device, i64 *cut_device, int *p_device, int len, int N) {
     int i = blockIdx.x * blockDim.x + threadIdx.x;
     int j = i + len;
+    int offset = blockIdx.x * blockDim.x;
 
     if (i >= N || j >= N) {
         return;
     }
 
+    int i_val = p_device[i];
+    int j_val = p_device[j + 1];
+    int dim = min(blockDim.x, N - len - offset);
+
+    extern __shared__ int smem[];
+    smem[threadIdx.x] = p_device[i + 1];
+    __syncthreads();
+
     for (int k = i; k < j; ++k) {
         i64 cost = dp_device[convertIdx(k - i, i, N)] + dp_device[convertIdx(j - k - 1, k + 1, N)] +
-                        1LL * p_device[i] * p_device[k + 1] * p_device[j + 1];
+                        1LL * i_val * smem[(k - offset) % dim] * j_val;
+        __syncthreads();
         if (cost < dp_device[convertIdx(len, i, N)]) {
             dp_device[convertIdx(len, i, N)] = cost;
             cut_device[convertIdx(len, i, N)] = k;
         }
+        if (threadIdx.x == dim - 1) {
+            smem[(k - i) % dim] = p_device[k + 2];
+        }
+        __syncthreads();
     }
 }
 
@@ -98,8 +112,9 @@ int main(int argc, char *argv[]) {
     // Launch kernel for each length
     for (int len = 1; len < N; ++len) {
         int num_blocks = ceil(N - len, thread_per_block);
+        // int smem_size = thread_per_block * sizeof(int);
         // std::cout << "Launching kernel for length " << len << " with " << num_blocks << " blocks" << std::endl;
-        oneThreadPerEntry<<<num_blocks, thread_per_block>>>(dp_device, cut_device, p_device, len, N);
+        oneThreadPerEntry<<<num_blocks, thread_per_block, thread_per_block * sizeof(int)>>>(dp_device, cut_device, p_device, len, N);
         // Check if the kernel launch was successful
         cudaError_t err = cudaGetLastError();
         if (err != cudaSuccess) {

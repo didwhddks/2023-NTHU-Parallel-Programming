@@ -4,11 +4,10 @@
 #include <cuda.h>
 #include <chrono>
 
-#define thread_per_block 128
 #define i64 long long
 
 const i64 inf = 2E18;
-int N;
+int N, thread_per_block;
 i64 *dp_host, *cut_host;
 int *p_host;
 
@@ -71,9 +70,10 @@ __global__ void oneThreadPerEntry(i64 *dp_device, i64 *cut_device, int *p_device
     }
 }
 
-int main() {
+int main(int argc, char *argv[]) {
     cudaSetDevice(0);
     input();
+    thread_per_block = argc > 1 ? atoi(argv[1]) : 32;
 
     i64 *dp_device, *cut_device;
     int *p_device;

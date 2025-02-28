@@ -21,8 +21,8 @@ This project accelerates the solution by leveraging **GPU parallelism**, optimiz
 A standard DP table is computed bottom-up. GPU parallelization assigns table entries to threads while respecting data dependencies:
 
 - Baseline: Naively offload tasks to GPU without considering memory optimizations
-- Coalesced: Consider coalescing effect to reduce global memory transactions
-- Shared: Consider per-block shared memory usage for faster memory accesses
+- Coalesced: Consider coalescing effect to reduce global memory transactions (super effective!!)
+- Shared: Consider potential per-block shared memory usage for faster memory accesses
 - Optimized versions: Minimize unnecessary memory accesses to further improve performance
 
 ## Results
