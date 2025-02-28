@@ -31,9 +31,9 @@ The GPU implementations are evaluated on an NVIDIA T4 GPU with 2560 CUDA cores (
 
 The experimental configurations follow the original paper, using **N = 16,384** and the **oneThreadPerEntry** computation pattern. For the block size, values in **{32, 64, 128, 256}** are tested, and the best-performing configuration is selected for comparison.
 
-||  CPU   | GPU_baseline | GPU_coalesced | GPU_optimized |
-|:-:| :-:  | :-:  | :-: | :-: |
-| Execution time (ms) | 3,118,010  | 194,250 | 70,783.3 | 50,736.4 |
+||  CPU   | GPU_baseline | GPU_coalesced | GPU_shared | GPU_optimal |
+|:-:| :-:  | :-:  | :-: | :-: | :-: |
+| Execution time (ms) | 3,118,010  | 194,250 | 70,783.3 | 79,401.6 | 50,736.4 |
 
 ![title](src/result.png)
 
