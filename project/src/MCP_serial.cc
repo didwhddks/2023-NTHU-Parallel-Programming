@@ -7,9 +7,6 @@
 
 int main(int argc, char *argv[]) {
 
-    double execution_time = 0.0;
-    auto start = std::chrono::steady_clock::now();
-
     int N;
     FILE *input_file = fopen("testcase", "r");
     fread(&N, sizeof(int), 1, input_file);
@@ -20,9 +17,12 @@ int main(int argc, char *argv[]) {
     fread(&p[0], sizeof(int), N + 1, input_file);
     fclose(input_file);
 
-    const long long INF = 2E18;
+    double execution_time = 0.0;
+    auto start = std::chrono::steady_clock::now();
 
-    std::vector<std::vector<long long>> dp(N, std::vector<long long>(N, INF));
+    const long long inf = 2E18;
+
+    std::vector<std::vector<long long>> dp(N, std::vector<long long>(N, inf));
     std::vector<std::vector<int>> cut(N, std::vector<int>(N, -1));
 
     for (int i = 0; i < N; ++i) {

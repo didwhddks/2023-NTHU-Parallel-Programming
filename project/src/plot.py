@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 
 # Sample data: Execution times (speedup over CPU)
 labels = ['CPU', 'GPU Baseline', 'GPU Coalesced', 'GPU Shared', 'GPU Optimal']
-speedup = [1, 16.1, 44.1, 39.3, 61.5]
+speedup = [1, 38.9, 107.0, 95.2, 149.0]
 colors = ['gray', 'royalblue', 'limegreen', 'crimson', 'darkorange']
 
 # Create figure and axes
