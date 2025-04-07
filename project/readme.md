@@ -16,7 +16,7 @@ This project accelerates the solution by leveraging **GPU parallelism**, optimiz
 
 **Matrix Chain Product Problem** is an optimization problem for finding parentheses of the matrix chain that gives the minimum total number of multiplications necessary to compute the product of the matrix chain. 
 
-Suppose that a chain of three or more matrices to be multiplied is given. The total number of multiplications may vary depending on the order of multiplication as depicted below.
+Suppose that a chain of three or more matrices to be multiplied is given. The total number of multiplications required might vary depending on the order of multiplication as depicted below.
 
 ![pic](src/chain.png)
 
@@ -31,13 +31,13 @@ A standard DP table is computed bottom-up. GPU parallelization assigns table ent
 
 ## Results
 
-The GPU implementations are evaluated on an NVIDIA T4 GPU with 2560 CUDA cores (64 cores per SM) and 16GB memory (up to 320+ GB/s bandwidth). For comparison, a traditional CPU implementation is also tested on a **13th Gen Intel® Core™ i7-13700**, which features **8 performance cores, 8 efficiency cores, and 24 threads**. The CPU implementation includes both **a single-threaded version** and a **multithreaded version**, with the latter leveraging parallel execution across multiple cores to ensure a fair comparison with the GPU.
+The GPU implementations are evaluated on an NVIDIA T4 GPU with 2560 CUDA cores (64 cores per SM) and 16GB VRAM (up to 320+ GB/s bandwidth). For comparison, a traditional CPU implementation is also tested on a **13th Gen Intel® Core™ i7-13700**, which features **8 performance cores, 8 efficiency cores, and 24 threads**. The CPU implementation includes both **a single-threaded version** and a **multithreaded version**, with the latter leveraging parallel execution across multiple cores to ensure a relatively fair comparison with the GPU.
 
 The GPU experimental configurations follow the original paper, using **N = 16,384** and the **oneThreadPerEntry** computation pattern. For the block size, values in **{32, 64, 128, 256}** are tested, and the best-performing configuration is selected for comparison.
 
 ||  CPU   | GPU_baseline | GPU_coalesced | GPU_shared | GPU_optimal |
 |:-:| :-:  | :-:  | :-: | :-: | :-: |
-| Execution time (ms) | 7,561,300  | 194,250 | 70,783.3 | 79,401.6 | 50,736.4 |
+| Latency (ms) | 7,561,300  | 194,250 | 70,783.3 | 79,401.6 | 50,736.4 |
 
 ![title](src/result.png)
 
